@@ -93,4 +93,5 @@ do
   fi
 
 done
-rm "rom/*" > /dev/null 2>&
+
+rm "rom/*" > /dev/null 2>&1
